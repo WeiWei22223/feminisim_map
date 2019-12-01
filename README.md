@@ -2,5 +2,5 @@
 INFO102 Final Project
 
 ## Dataset
-1. countries where same sex marriage is legal_by_population_2019: **countries_ss.csv** from [World Population Review](http://worldpopulationreview.com/countries/countries-where-gay-marriage-is-legal/)
-2. World Map geo JSON data: **custom.geo.json** from [Download vector maps](https://geojson-maps.ash.ms/)
+1. **Reveal_EEO1_for_2016.csv** from [Silicon Valley Diversity Data](https://www.kaggle.com/rtatman/silicon-valley-diversity-data/version/1)
+2. Part of longitude and Latitude information of tech company from [GPS Coordinate](https://www.gps-coordinates.net/)

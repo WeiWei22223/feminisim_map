@@ -1,75 +1,58 @@
 library(shiny)
 library(leaflet)
-library(geojsonio)
+library(widgetframe)
 
-# data of countries that same sex marriage is legal
-original_data <- read.csv("../dataset/countries_ss.csv", header = TRUE, stringsAsFactors = FALSE)
+# Get tech company location dataset and EEO1 dataset 2016
+location <- read.csv("../dataset/Tech_company_location.csv", stringsAsFactors = FALSE, header = TRUE)
+diversity_data <- read.csv("../dataset/Reveal_EEO1_for_2016.csv", stringsAsFactors = FALSE, header = TRUE)
 
-# Sort by law passed date
-data <- original_data[order(original_data$legalizeYear), ]
+# Since there are a lot of na in column count with job_category of "Previous_totals", 
+# we deicide remove all rows of job_category of "Previous_totals" (30 rows removed)
+trimed_data <- diversity_data[diversity_data$job_category != "Previous_totals", ]
 
-# world map
-world_country <- geojsonio::geojson_read("../dataset/custom.geo.json", what = "sp")
+# Data organize and cleaning:
+cleaned_data <- location
+cleaned_data$male_count <- 0
+cleaned_data$female_count <- 0
+cleaned_data$overall_total <- 0
 
-# make the dataset with 3 column: country name, law passed or not, 
-vector_country_name <- world_country$sovereignt
-organized <- data.frame(vector_country_name, 0)
-organized$year <- 0
-colnames(organized) <- c("country", "passed", "year")
-organized$country <- as.character(organized$country)
-
-# Not contained in map: Greenland, Bermuda
-# United States of America -> name need correct
-for (i in 1:nrow(organized)) {
-  for (j in 1:nrow(data)) {
-    if (data[j, 1] == organized[i, 1]) {
-      organized[i, 2] <- data[j, 2] - 2000
-      organized[i, 3] <- data[j, 2]
-    }
-  } 
+# Loop though each company get the female and male worker counts in each company
+for (row_number in 1:nrow(cleaned_data)) {
+  company_name <- cleaned_data[row_number, 1]
+  filtered_by_company <- trimed_data[trimed_data$company == company_name, ]
+  male_data <- filtered_by_company[filtered_by_company$gender == "male", ]
+  female_data <- filtered_by_company[filtered_by_company$gender == "female", ]
+  overall_total <- filtered_by_company[filtered_by_company$race == "Overall_totals", ]
+  cleaned_data[row_number, 4] <- sum(as.numeric(male_data$count))
+  cleaned_data[row_number, 5] <- sum(as.numeric(female_data$count))
+  cleaned_data[row_number, 6] <- sum(as.numeric(overall_total$count))
 }
 
-# Add US
-organized[1, 2] <- 1
-organized[1, 3] <- 2015
+# Since Intel and Cisco's location is too far away from other company,
+# remove Intel from dataset
+cleaned_data <- cleaned_data[cleaned_data$Company != "Intel", ]
+cleaned_data <- cleaned_data[cleaned_data$Company != "Cisco", ]
 
-# color
-bins <- c(1:17, Inf)
-pal <- colorBin("YlOrRd", domain = organized$passed, bins = bins)
+# write the cleaned dataset
+# write.csv(cleaned_data, file = "cleaned_data.csv",row.names=FALSE)
 
-# label
-labels <- sprintf(
-  "<strong>%s</strong><br/> Year Passed: %s",
-  organized$country, organized$year
-) %>% lapply(htmltools::HTML)
-
-# Define server logic required to draw a histogram
-my_server <- function(input, output) {
+my_server <- function(input, output, session) {
   
-  output$world_wide_map <- renderLeaflet({
-    Map <- leaflet(world_country) %>% addTiles() %>% addPolygons(fillColor = ~pal(organized$passed),
-                                                                 weight = 2,
-                                                                 opacity = 1,
-                                                                 color = "white",
-                                                                 dashArray = "3",
-                                                                 fillOpacity = 0.7,
-                                                                 
-                                                                 # mouth rover effect
-                                                                 highlight = highlightOptions(
-                                                                   weight = 5,
-                                                                   color = "#666",
-                                                                   dashArray = "",
-                                                                   fillOpacity = 0.7,
-                                                                   bringToFront = TRUE),
-                                                                 
-                                                                 # labels when mouth rover
-                                                                 label = labels,
-                                                                 labelOptions = labelOptions(
-                                                                   style = list("font-weight" = "normal", 
-                                                                                padding = "3px 8px"),
-                                                                   textsize = "15px",
-                                                                   direction = "auto")) %>% 
-      addLegend(pal = pal, values = organized$year, opacity = 0.7, 
-                title = "Year after 2000", position = "topright")
+  # Output a map with labels of company name and number of employee of different gender
+  output$diveristy_map <- renderLeaflet({
+    leaflet(cleaned_data) %>%
+      addTiles() %>%
+      # addProviderTiles(providers$OpenStreetMap) %>% 
+      fitBounds(~(min(cleaned_data$Longitude) - 1), ~(min(cleaned_data$Latitude) - 1), 
+                ~(max(cleaned_data$Longitude) + 1), ~(max(cleaned_data$Latitude) + 1)) %>%
+      addMarkers(data = cleaned_data[, c(2,3)], 
+                 label = paste('<p>', "Company: ", '<strong>', cleaned_data$Company, '</strong></p><p>',
+                                "Female Employee Number: ", cleaned_data$female_count, '</p><p>',
+                                "Male Employee Number: ", cleaned_data$male_count, '</p><p>',
+                                "Total Employee Number: ", cleaned_data$overall_total, '</p>') %>% 
+                   lapply(htmltools::HTML),
+                 labelOptions = labelOptions(noHide = F, textsize = "15px", direction = "left")) %>% 
+      setView(lng = -122.3, lat = 37.6, zoom = 10)
   })
+  
 }
