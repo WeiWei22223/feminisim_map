@@ -44,7 +44,7 @@ diversity_map <- tabPanel(
 
 ui <- fluidPage(
   theme = shinythemes::shinytheme("readable"),
-  titlePanel("Feminism Map"),
+  HTML('<center><img src="logo.jpg" width="300" height="200" alt="Feminism Map"></center>'),
   navbarPage(
     "Pages:", 
     main_page,                 # include the description

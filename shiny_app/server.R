@@ -98,7 +98,7 @@ my_server <- function(input, output, session) {
              yaxis = list(title = "Number of Employee"),
              margin = list(b = 100),
              legend = list(x = 0, y = 1),
-             barmode = 'group')
+             barmode = 'group') 
   })
   
 }
