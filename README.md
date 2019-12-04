@@ -1,10 +1,10 @@
 # Feminisim Map
 INFO102 Final Project
 
-# Authors
+## Authors
 Wei Fan, Ruhan Hou
 
-# Link to the Published Page
+## Link to the Published Page
 [Feminism Map](https://weifan.shinyapps.io/feminism_map/)
 
 ## Dataset
