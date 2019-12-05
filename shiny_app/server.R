@@ -2,10 +2,11 @@ library(shiny)
 library(plotly)
 library(leaflet)
 library(leaflet.minicharts)
+library(shinythemes)
 
 # Get tech company location dataset and EEO1 dataset 2016
-location <- read.csv("../dataset/Tech_company_location.csv", stringsAsFactors = FALSE, header = TRUE)
-diversity_data <- read.csv("../dataset/Reveal_EEO1_for_2016.csv", stringsAsFactors = FALSE, header = TRUE)
+location <- read.csv("dataset/Tech_company_location.csv", stringsAsFactors = FALSE, header = TRUE)
+diversity_data <- read.csv("dataset/Reveal_EEO1_for_2016.csv", stringsAsFactors = FALSE, header = TRUE)
 
 # Since there are a lot of na in column count with job_category of "Previous_totals", 
 # we deicide remove all rows of job_category of "Previous_totals" (30 rows removed)
@@ -13,8 +14,8 @@ trimed_data <- diversity_data[diversity_data$job_category != "Previous_totals", 
 
 # Data organize and cleaning:
 cleaned_data <- location
-cleaned_data$male_count <- 0
-cleaned_data$female_count <- 0
+cleaned_data$men_count <- 0
+cleaned_data$women_count <- 0
 cleaned_data$overall_total <- 0
 
 # Loop though each company get the female and male worker counts in each company
@@ -42,8 +43,8 @@ cleaned_data <- cleaned_data[cleaned_data$Company != "Cisco", ]
 colors <- c("#F8C471", "#85C1E9")
 
 # change value to numeric
-cleaned_data$female_count <- as.numeric(cleaned_data$female_count)
-cleaned_data$male_count <- as.numeric(cleaned_data$male_count)
+cleaned_data$women_count <- as.numeric(cleaned_data$women_count)
+cleaned_data$men_count <- as.numeric(cleaned_data$men_count)
 cleaned_data$overall_total <- as.numeric(cleaned_data$overall_total)
 
 # Remove category data for mini pie charts
@@ -58,9 +59,9 @@ my_server <- function(input, output, session) {
   
   # Output text of map description
   output$map_description <- renderText({
-    paste("The map blow utilizes data from ", nrow(cleaned_data), " Silicon Valley, and the location of these companies 
-          are marked in the Bay Area. Move mouth on top of each marker to see the company name, number of female employee, 
-          number of male employee, and number of total emplyee. ")
+    paste("The map blow utilizes data from ", nrow(cleaned_data), " companies in Silicon Valley, and the location of these companies 
+          are marked in the Bay Area. Move mouth on top of each marker to see the company name, number of women employee, 
+          number of men employee, and number of total emplyee. ")
   })
   
   # Output a map with labels of company name and number of employee of different gender
@@ -71,8 +72,8 @@ my_server <- function(input, output, session) {
                      ~(max(cleaned_data$Longitude) + 1), ~(max(cleaned_data$Latitude) + 1)) %>%
            addMarkers(data = cleaned_data[, c(2,3)],
                      label = paste('<p>', "Company: ", '<strong>', cleaned_data$Company, '</strong></p><p>',
-                                   "Female Employee Number: ", cleaned_data$female_count, '</p><p>',
-                                   "Male Employee Number: ", cleaned_data$male_count, '</p><p>',
+                                   "Women Number: ", cleaned_data$women_count, '</p><p>',
+                                   "Men Employee Number: ", cleaned_data$men_count, '</p><p>',
                                    "Total Employee Number: ", cleaned_data$overall_total, '</p>') %>%
                        lapply(htmltools::HTML),
                      labelOptions = labelOptions(noHide = F, textsize = "15px", direction = "left")) %>%
@@ -82,7 +83,7 @@ my_server <- function(input, output, session) {
     map %>% addMinicharts(
       partial_data$Longitude, cleaned_data$Latitude,
       type = "pie",
-      chartdata = partial_data[, c("female_count", "male_count")],
+      chartdata = partial_data[, c("women_count", "men_count")],
       colorPalette = colors,
       width = 100 * sqrt(partial_data$overall_total) / sqrt(max(partial_data$overall_total)), transitionTime = 0
     )
@@ -90,9 +91,9 @@ my_server <- function(input, output, session) {
   
   # Output a bar chart with number of employees in different gender
   output$bar_plot <- renderPlotly({
-    bar_graph <- plot_ly(sorted_data, x = sorted_data$Company, y = sorted_data$female_count, type = 'bar', 
-                         name = 'Number of Female Employee', marker = list(color = 'rgb(248, 196, 113)')) %>% 
-      add_trace(y = sorted_data$male_count, name = 'Number of Male Employee', marker = list(color = 'rgb(133, 193, 233 )')) %>% 
+    bar_graph <- plot_ly(sorted_data, x = sorted_data$Company, y = sorted_data$women_count, type = 'bar', 
+                         name = 'Number of women', marker = list(color = 'rgb(248, 196, 113)')) %>% 
+      add_trace(y = sorted_data$men_count, name = 'Number of Men', marker = list(color = 'rgb(133, 193, 233 )')) %>% 
       layout(title = 'Gender Distribution',
              xaxis = list(title = "Company name"),
              yaxis = list(title = "Number of Employee"),

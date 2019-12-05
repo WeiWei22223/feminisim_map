@@ -1,0 +1,12 @@
+name: feminism_map
+title: feminism_map
+username:
+account: weifan
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 1544359
+bundleId: 2642208
+url: https://weifan.shinyapps.io/feminism_map/
+when: 1575505052.35669
+asMultiple: FALSE
+asStatic: FALSE
